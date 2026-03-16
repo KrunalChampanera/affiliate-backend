@@ -112,6 +112,20 @@ OrderItem.belongsTo(Order,{
 })
 
 /* ======================
+   BLOG RELATIONS
+====================== */
+
+Category.hasMany(Blog,{
+  foreignKey:"CategoryId",
+  onDelete:"SET NULL"
+})
+
+Blog.belongsTo(Category,{
+  foreignKey:"CategoryId",
+  as:"Category"
+})
+
+/* ======================
    EXPORT
 ====================== */
 

@@ -1,575 +1,755 @@
-import { useEffect, useState } from "react"
-import { Container, Row, Col, Form, InputGroup, FormControl, Card, Badge, Spinner } from "react-bootstrap"
+import { useEffect, useState, useRef } from "react"
 import API from "../services/api"
-import { Link, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import InstagramSection from "./InstagramSection"
 import PageHeader from "./PageHeader"
 
 const BASE_URL = "http://localhost:5000/uploads/"
 
-const Shop = () => {
+// ─── Design tokens ────────────────────────────────────────────
+const T = {
+  bg:      "linear-gradient(160deg, #fef9f5 0%, #fff5f0 50%, #fdf0ff 100%)",
+  accent:  "#e8613a",
+  dark:    "#1c1410",
+  card:    "#ffffff",
+  muted:   "rgba(28,20,16,0.45)",
+  border:  "rgba(232,97,58,0.1)",
+  radius:  "20px",
+  font:    "'Nunito Sans', sans-serif",
+  serif:   "'Lora', serif",
+}
 
-  const navigate = useNavigate()
-  const [products, setProducts] = useState([])
-  const [search, setSearch] = useState("")
-  const [sort, setSort] = useState("default")
+const S = {
+  page: {
+    background: T.bg,
+    minHeight: "100vh",
+    fontFamily: T.font,
+  },
+  section: {
+    maxWidth: "1340px",
+    margin: "0 auto",
+    padding: "56px 24px 96px",
+  },
+  // ── Filter bar ──
+  filterBar: {
+    background: "#fff",
+    borderRadius: "22px",
+    border: `1px solid ${T.border}`,
+    boxShadow: "0 4px 32px rgba(232,97,58,0.06)",
+    padding: "22px 28px",
+    marginBottom: "40px",
+    display: "flex",
+    alignItems: "center",
+    gap: "20px",
+    flexWrap: "wrap",
+  },
+  resultChip: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: "120px",
+    padding: "14px 20px",
+    background: "linear-gradient(135deg,rgba(232,97,58,0.08),rgba(232,97,58,0.04))",
+    borderRadius: "14px",
+    border: `1px solid ${T.border}`,
+  },
+  resultNum: {
+    fontSize: "26px",
+    fontWeight: "800",
+    fontFamily: T.serif,
+    color: T.accent,
+    lineHeight: 1,
+  },
+  resultLabel: {
+    fontSize: "10px",
+    fontWeight: "700",
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
+    color: T.muted,
+    marginTop: "3px",
+  },
+  // Search
+  searchWrap: {
+    position: "relative",
+    flex: "1",
+    minWidth: "200px",
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "14px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    fontSize: "15px",
+    pointerEvents: "none",
+    color: T.muted,
+  },
+  searchInput: (focus) => ({
+    width: "100%",
+    padding: "13px 16px 13px 42px",
+    borderRadius: "13px",
+    border: `1.5px solid ${focus ? T.accent : "rgba(28,20,16,0.1)"}`,
+    background: focus ? "#fffaf8" : "#fafafa",
+    fontSize: "14px",
+    fontFamily: T.font,
+    color: T.dark,
+    outline: "none",
+    boxShadow: focus ? "0 0 0 3px rgba(232,97,58,0.08)" : "none",
+    transition: "all 0.25s ease",
+  }),
+  // Sort select
+  sortWrap: { minWidth: "200px" },
+  sortLabel: {
+    fontSize: "10px",
+    fontWeight: "800",
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
+    color: T.muted,
+    marginBottom: "6px",
+    display: "block",
+  },
+  sortSelect: (focus) => ({
+    width: "100%",
+    padding: "13px 16px",
+    borderRadius: "13px",
+    border: `1.5px solid ${focus ? T.accent : "rgba(28,20,16,0.1)"}`,
+    background: "#fafafa",
+    fontSize: "14px",
+    fontFamily: T.font,
+    color: T.dark,
+    outline: "none",
+    cursor: "pointer",
+    transition: "all 0.25s ease",
+    appearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e8613a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 14px center",
+    paddingRight: "38px",
+  }),
+  // ── Active filter chips ──
+  chipRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+    marginBottom: "28px",
+  },
+  chip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "5px 14px",
+    borderRadius: "50px",
+    background: "rgba(232,97,58,0.08)",
+    border: "1px solid rgba(232,97,58,0.2)",
+    color: T.accent,
+    fontSize: "12px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+  // ── Products grid ──
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+    gap: "24px",
+    marginBottom: "56px",
+  },
+  // ── Product card ──
+  card: (hov) => ({
+    background: T.card,
+    borderRadius: T.radius,
+    border: `1px solid ${hov ? "rgba(232,97,58,0.2)" : T.border}`,
+    boxShadow: hov
+      ? "0 20px 56px rgba(232,97,58,0.14)"
+      : "0 3px 20px rgba(0,0,0,0.05)",
+    transform: hov ? "translateY(-6px)" : "translateY(0)",
+    transition: "all 0.35s cubic-bezier(0.23,1,0.32,1)",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    textDecoration: "none",
+    cursor: "pointer",
+  }),
+  imgWrap: {
+    position: "relative",
+    height: "240px",
+    background: "linear-gradient(135deg,#fef5f0,#fff8f5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    padding: "16px",
+  },
+  img: (hov) => ({
+    maxHeight: "100%",
+    maxWidth: "100%",
+    objectFit: "contain",
+    transform: hov ? "scale(1.07)" : "scale(1)",
+    transition: "transform 0.45s cubic-bezier(0.23,1,0.32,1)",
+  }),
+  badgeRow: {
+    position: "absolute",
+    top: "14px",
+    left: "14px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+  },
+  badge: (color, bg) => ({
+    fontSize: "9px",
+    fontWeight: "800",
+    letterSpacing: "1.5px",
+    textTransform: "uppercase",
+    color,
+    background: bg,
+    padding: "4px 10px",
+    borderRadius: "50px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  }),
+  couponTag: {
+    position: "absolute",
+    bottom: "14px",
+    right: "14px",
+    background: "linear-gradient(135deg,#e8613a,#f0855e)",
+    color: "#fff",
+    fontSize: "10px",
+    fontWeight: "800",
+    padding: "5px 12px",
+    borderRadius: "50px",
+    letterSpacing: "0.5px",
+    boxShadow: "0 4px 14px rgba(232,97,58,0.35)",
+  },
+  wishBtn: (hov) => ({
+    position: "absolute",
+    top: "14px",
+    right: "14px",
+    width: "34px",
+    height: "34px",
+    borderRadius: "50%",
+    background: hov ? T.accent : "#fff",
+    border: `1px solid ${hov ? T.accent : "rgba(232,97,58,0.2)"}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "15px",
+    cursor: "pointer",
+    boxShadow: "0 3px 12px rgba(0,0,0,0.08)",
+    transition: "all 0.25s ease",
+    zIndex: 2,
+  }),
+  cardBody: {
+    padding: "20px 22px 22px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    flex: 1,
+  },
+  productTitle: {
+    fontSize: "14px",
+    fontWeight: "700",
+    color: T.dark,
+    lineHeight: 1.4,
+    fontFamily: T.font,
+    minHeight: "40px",
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+  },
+  ratingRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "5px",
+  },
+  ratingStars: {
+    display: "flex",
+    gap: "1px",
+  },
+  ratingNum: {
+    fontSize: "12px",
+    fontWeight: "700",
+    color: T.muted,
+  },
+  priceRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "2px",
+  },
+  price: {
+    fontSize: "20px",
+    fontWeight: "800",
+    fontFamily: T.serif,
+    background: "linear-gradient(135deg,#e8613a,#f0855e)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+  },
+  oldPrice: {
+    fontSize: "13px",
+    color: "rgba(28,20,16,0.3)",
+    textDecoration: "line-through",
+    fontWeight: "600",
+  },
+  addBtn: (hov) => ({
+    width: "100%",
+    padding: "13px",
+    borderRadius: "13px",
+    border: "none",
+    background: hov
+      ? "linear-gradient(135deg,#d4542e,#e8613a)"
+      : "linear-gradient(135deg,#e8613a,#f0855e)",
+    color: "#fff",
+    fontSize: "13px",
+    fontWeight: "800",
+    letterSpacing: "0.8px",
+    cursor: "pointer",
+    boxShadow: hov ? "0 10px 30px rgba(232,97,58,0.45)" : "0 4px 16px rgba(232,97,58,0.2)",
+    transform: hov ? "translateY(-1px)" : "translateY(0)",
+    transition: "all 0.3s cubic-bezier(0.23,1,0.32,1)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    marginTop: "auto",
+  }),
+  // ── Toast ──
+  toast: (show, ok) => ({
+    position: "fixed",
+    bottom: "32px",
+    right: "32px",
+    background: "#fff",
+    border: `1px solid ${ok ? "rgba(0,180,80,0.3)" : "rgba(232,97,58,0.3)"}`,
+    borderRadius: "16px",
+    padding: "16px 22px",
+    color: ok ? "#00a84f" : T.accent,
+    fontWeight: "700",
+    fontSize: "14px",
+    fontFamily: T.font,
+    boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
+    zIndex: 9999,
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    opacity: show ? 1 : 0,
+    transform: show ? "translateY(0)" : "translateY(16px)",
+    transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
+    pointerEvents: "none",
+    maxWidth: "340px",
+  }),
+  // ── Empty state ──
+  empty: {
+    textAlign: "center",
+    padding: "80px 24px",
+    background: "#fff",
+    borderRadius: T.radius,
+    border: `1px solid ${T.border}`,
+  },
+  // ── Pagination ──
+  pagination: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+    marginTop: "16px",
+  },
+  pageBtn: (active, hov) => ({
+    minWidth: "42px",
+    height: "42px",
+    padding: "0 12px",
+    borderRadius: "12px",
+    border: `1.5px solid ${active ? T.accent : hov ? "rgba(232,97,58,0.3)" : "rgba(28,20,16,0.1)"}`,
+    background: active
+      ? "linear-gradient(135deg,#e8613a,#f0855e)"
+      : hov ? "rgba(232,97,58,0.05)" : "#fff",
+    color: active ? "#fff" : hov ? T.accent : T.dark,
+    fontSize: "14px",
+    fontWeight: "700",
+    fontFamily: T.font,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    boxShadow: active ? "0 6px 20px rgba(232,97,58,0.3)" : "none",
+    transition: "all 0.25s ease",
+  }),
+  // ── Spinner ──
+  spinnerWrap: {
+    minHeight: "60vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "16px",
+  },
+  spinner: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "50%",
+    border: "3px solid rgba(232,97,58,0.15)",
+    borderTop: "3px solid #e8613a",
+    animation: "spin 0.9s linear infinite",
+  },
+}
+
+// ─── Star renderer ────────────────────────────────────────────
+const Stars = ({ rating }) => {
+  // Guard: clamp to 0-5, default to 0 if invalid
+  const r     = Math.min(5, Math.max(0, parseFloat(rating) || 0))
+  const full  = Math.floor(r)
+  const half  = r % 1 >= 0.5
+  const empty = Math.max(0, 5 - full - (half ? 1 : 0))
+  return (
+    <div style={S.ratingStars}>
+      {Array(full).fill(null).map((_,i) => <span key={"f"+i} style={{ color:"#f5a623",fontSize:"13px" }}>★</span>)}
+      {half && <span style={{ color:"#f5a623",fontSize:"13px" }}>★</span>}
+      {Array(empty).fill(null).map((_,i) => <span key={"e"+i} style={{ color:"rgba(28,20,16,0.2)",fontSize:"13px" }}>☆</span>)}
+    </div>
+  )
+}
+
+// ─── Product Card ─────────────────────────────────────────────
+const ProductCard = ({ product, onAddToCart, vis, index }) => {
+  const [hov,     setHov]     = useState(false)
+  const [btnHov,  setBtnHov]  = useState(false)
+  const [wishHov, setWishHov] = useState(false)
+  const [wished,  setWished]  = useState(false)
+
+  return (
+    <div style={{
+      opacity: vis ? 1 : 0,
+      transform: vis ? "translateY(0)" : "translateY(20px)",
+      transition: `all 0.5s ease ${(index % 12) * 0.05}s`,
+    }}>
+      <Link to={`/product/${product.id}`} style={{ ...S.card(hov), display: "flex", flexDirection: "column", textDecoration: "none" }}
+        onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+
+        {/* Image area */}
+        <div style={S.imgWrap}>
+          {product.image
+            ? <img src={BASE_URL + product.image} alt={product.title} style={S.img(hov)} />
+            : <div style={{ fontSize: "48px", opacity: 0.3 }}>📦</div>
+          }
+
+          {/* Badges */}
+          <div style={S.badgeRow}>
+            {product.isNew      && <span style={S.badge("#fff","linear-gradient(135deg,#34d399,#059669)")}>✦ New</span>}
+            {product.isTopDeal  && <span style={S.badge("#fff","linear-gradient(135deg,#e8613a,#f0855e)")}>🔥 Top Deal</span>}
+            {product.isPopular  && <span style={S.badge("#1c1410","linear-gradient(135deg,#fbbf24,#fde68a)")}>⭐ Popular</span>}
+          </div>
+
+          {/* Coupon tag */}
+          {product.Coupon && (
+            <div style={S.couponTag}>
+              Save {product.Coupon.discountType === "percentage"
+                ? product.Coupon.discountValue + "%"
+                : "$" + product.Coupon.discountValue}
+            </div>
+          )}
+
+          {/* Wishlist button */}
+          <button
+            style={S.wishBtn(wishHov || wished)}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); setWished(w => !w) }}
+            onMouseEnter={e => { e.preventDefault(); setWishHov(true) }}
+            onMouseLeave={e => { e.preventDefault(); setWishHov(false) }}
+          >
+            {wished ? "♥" : "♡"}
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={S.cardBody}>
+          <div style={S.productTitle}>{product.title}</div>
+
+          {product.rating && !isNaN(parseFloat(product.rating)) && (
+            <div style={S.ratingRow}>
+              <Stars rating={parseFloat(product.rating)} />
+              <span style={S.ratingNum}>{parseFloat(product.rating).toFixed(1)}</span>
+            </div>
+          )}
+
+          <div style={S.priceRow}>
+            <span style={S.price}>${Number(product.price).toFixed(2)}</span>
+            {product.oldPrice && <span style={S.oldPrice}>${Number(product.oldPrice).toFixed(2)}</span>}
+          </div>
+
+          <button
+            style={S.addBtn(btnHov)}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); onAddToCart(product) }}
+            onMouseEnter={e => { e.preventDefault(); setBtnHov(true) }}
+            onMouseLeave={e => { e.preventDefault(); setBtnHov(false) }}
+          >
+            🛒 Add to Cart
+          </button>
+        </div>
+      </Link>
+    </div>
+  )
+}
+
+// ─── Pagination button ────────────────────────────────────────
+const PageBtn = ({ label, onClick, active, disabled }) => {
+  const [hov, setHov] = useState(false)
+  if (disabled) return null
+  return (
+    <button
+      style={S.pageBtn(active, hov)}
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      {label}
+    </button>
+  )
+}
+
+// ─── Main ─────────────────────────────────────────────────────
+const Shop = () => {
+  const [products,    setProducts]    = useState([])
+  const [search,      setSearch]      = useState("")
+  const [sort,        setSort]        = useState("default")
   const [currentPage, setCurrentPage] = useState(1)
-  const [loading, setLoading] = useState(true)
+  const [loading,     setLoading]     = useState(true)
+  const [vis,         setVis]         = useState(false)
+  const [searchFocus, setSearchFocus] = useState(false)
+  const [sortFocus,   setSortFocus]   = useState(false)
+  const [toast,       setToast]       = useState({ show: false, msg: "", ok: true })
 
   const productsPerPage = 12
 
+  const showToast = (msg, ok = true) => {
+    setToast({ show: true, msg, ok })
+    setTimeout(() => setToast(t => ({ ...t, show: false })), 2400)
+  }
+
   useEffect(() => {
     fetchProducts()
+    const link = document.createElement("link")
+    link.href = "https://fonts.googleapis.com/css2?family=Lora:wght@700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap"
+    link.rel = "stylesheet"
+    document.head.appendChild(link)
+    const style = document.createElement("style")
+    style.innerHTML = `@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box}`
+    document.head.appendChild(style)
   }, [])
 
   const fetchProducts = async () => {
     try {
       setLoading(true)
       const res = await API.get("/products")
-      setProducts(res.data)
+      setProducts(Array.isArray(res.data) ? res.data : [])
     } catch (err) {
-      console.log(err)
+      console.error(err)
     } finally {
       setLoading(false)
+      setTimeout(() => setVis(true), 80)
     }
+  }
+
+  const handleAddToCart = (product) => {
+    const cart = JSON.parse(localStorage.getItem("cart")) || []
+    const existing = cart.find(i => i.id === product.id)
+    if (existing) {
+      existing.qty += 1
+    } else {
+      cart.push({ id: product.id, title: product.title, price: product.price, image: product.image, couponId: product.couponId, qty: 1 })
+    }
+    localStorage.setItem("cart", JSON.stringify(cart))
+    showToast(`✓ ${product.title.substring(0, 28)}… added to cart!`)
   }
 
   const filtered = [...products]
-
-    .filter(p =>
-      p.title.toLowerCase().includes(search.toLowerCase())
-    )
-
+    .filter(p => p.title?.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
-
-      if (sort === "priceLow") return a.price - b.price
-
+      if (sort === "priceLow")  return a.price - b.price
       if (sort === "priceHigh") return b.price - a.price
-
-      if (sort === "rating") return (b.rating || 0) - (a.rating || 0)
-
-      if (sort === "newest") return b.id - a.id
-
-      if (sort === "nameAZ") return a.title.localeCompare(b.title)
-
-      if (sort === "nameZA") return b.title.localeCompare(a.title)
-
+      if (sort === "rating")    return (b.rating || 0) - (a.rating || 0)
+      if (sort === "newest")    return b.id - a.id
+      if (sort === "nameAZ")    return a.title.localeCompare(b.title)
+      if (sort === "nameZA")    return b.title.localeCompare(a.title)
       return 0
     })
 
-  const indexOfLast = currentPage * productsPerPage
-  const indexOfFirst = indexOfLast - productsPerPage
-
+  const indexOfLast    = currentPage * productsPerPage
+  const indexOfFirst   = indexOfLast - productsPerPage
   const currentProducts = filtered.slice(indexOfFirst, indexOfLast)
+  const totalPages      = Math.ceil(filtered.length / productsPerPage)
 
-  const totalPages = Math.ceil(filtered.length / productsPerPage)
+  const clearFilters = () => { setSearch(""); setSort("default"); setCurrentPage(1) }
 
-  const handleAddToCart = (e, product) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const hasFilters = search !== "" || sort !== "default"
 
-    const cart = JSON.parse(localStorage.getItem("cart")) || []
-    const existingItem = cart.find(item => item.id === product.id)
-
-    if (existingItem) {
-      existingItem.qty += 1
-    } else {
-      cart.push({
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        image: product.image,
-        couponId: product.couponId,
-        qty: 1
-      })
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart))
-    alert(`${product.title} added to cart!`)
-  }
-
-  if (loading) {
-    return (
-      <>
-        <PageHeader title="Shop" breadcrumb="Shop" />
-        <section style={{
-          padding: "100px 0",
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}>
-          <Container>
-            <div style={{ textAlign: "center" }}>
-              <Spinner animation="border" style={{ color: "#ff6b35", marginBottom: "20px" }} />
-              <p style={{ color: "#666", fontSize: "1.1rem" }}>Loading products...</p>
-            </div>
-          </Container>
-        </section>
-      </>
-    )
+  // ── Sort label map ──
+  const SORT_LABELS = {
+    default: null, newest: "Newest First", priceLow: "Price ↑",
+    priceHigh: "Price ↓", rating: "Top Rated", nameAZ: "A→Z", nameZA: "Z→A",
   }
 
   return (
     <>
-      <PageHeader title="Shop" breadcrumb="Shop" />
+      <div style={S.page}>
+        <PageHeader title="Shop" breadcrumb="Shop" />
 
-      <section style={{
-        padding: "80px 20px",
-        background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-        minHeight: "100vh"
-      }}>
+        {/* Toast */}
+        <div style={S.toast(toast.show, toast.ok)}>
+          {toast.ok ? "✓" : "✕"} {toast.msg}
+        </div>
 
-        <Container style={{ maxWidth: "1400px" }}>
+        <div style={S.section}>
 
-          {/* Filters Section */}
+          {/* ── Filter bar ─────────────────────────────────── */}
           <div style={{
-            marginBottom: "50px",
-            background: "white",
-            padding: "25px",
-            borderRadius: "12px",
-            boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)"
+            ...S.filterBar,
+            opacity: vis ? 1 : 0,
+            transform: vis ? "none" : "translateY(14px)",
+            transition: "all 0.5s ease",
           }}>
+            {/* Result count chip */}
+            <div style={S.resultChip}>
+              <div style={S.resultNum}>{filtered.length}</div>
+              <div style={S.resultLabel}>Products</div>
+            </div>
 
-            <Row style={{ alignItems: "center", gap: "20px" }}>
+            {/* Search */}
+            <div style={S.searchWrap}>
+              <span style={S.searchIcon}>🔍</span>
+              <input
+                placeholder="Search products…"
+                value={search}
+                onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
+                style={S.searchInput(searchFocus)}
+                onFocus={() => setSearchFocus(true)}
+                onBlur={() => setSearchFocus(false)}
+              />
+            </div>
 
-              {/* Results Count */}
-              <Col lg={3} md={6}>
-                <div style={{
-                  padding: "15px",
-                  background: "#f8f9fa",
-                  borderRadius: "8px",
-                  textAlign: "center"
-                }}>
-                  <p style={{
-                    margin: 0,
-                    color: "#666",
-                    fontWeight: "500"
-                  }}>
-                    <strong style={{ color: "#1a1a1a", fontSize: "1.1rem" }}>
-                      {filtered.length}
-                    </strong>
-                    {" "}Products Found
-                  </p>
-                  <small style={{ color: "#999" }}>
-                    Showing {indexOfFirst + 1}-{Math.min(indexOfLast, filtered.length)}
-                  </small>
-                </div>
-              </Col>
+            {/* Sort */}
+            <div style={S.sortWrap}>
+              <span style={S.sortLabel}>Sort by</span>
+              <select
+                value={sort}
+                onChange={e => { setSort(e.target.value); setCurrentPage(1) }}
+                style={S.sortSelect(sortFocus)}
+                onFocus={() => setSortFocus(true)}
+                onBlur={() => setSortFocus(false)}
+              >
+                <option value="default">Default Sorting</option>
+                <option value="newest">Newest First</option>
+                <option value="priceLow">💰 Price: Low → High</option>
+                <option value="priceHigh">💰 Price: High → Low</option>
+                <option value="rating">⭐ Top Rated</option>
+                <option value="nameAZ">A → Z</option>
+                <option value="nameZA">Z → A</option>
+              </select>
+            </div>
 
-              {/* Search Input */}
-              <Col lg={4} md={6}>
-                <div>
-                  <label style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#1a1a1a",
-                    fontSize: "0.9rem"
-                  }}>
-                    Search Products
-                  </label>
-                  <InputGroup style={{ borderRadius: "8px", overflow: "hidden" }}>
-                    <FormControl
-                      placeholder="Search by name..."
-                      value={search}
-                      onChange={(e) => {
-                        setSearch(e.target.value)
-                        setCurrentPage(1)
-                      }}
-                      style={{
-                        padding: "12px 15px",
-                        fontSize: "0.95rem",
-                        border: "1px solid #ddd"
-                      }}
-                    />
-                    <span style={{
-                      padding: "12px 15px",
-                      background: "#f8f9fa",
-                      borderLeft: "1px solid #ddd"
-                    }}>
-                      🔍
-                    </span>
-                  </InputGroup>
-                </div>
-              </Col>
-
-              {/* Sort Dropdown */}
-              <Col lg={5} md={6}>
-                <div>
-                  <label style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#1a1a1a",
-                    fontSize: "0.9rem"
-                  }}>
-                    Sort By
-                  </label>
-                  <Form.Select
-                    value={sort}
-                    onChange={(e) => {
-                      setSort(e.target.value)
-                      setCurrentPage(1)
-                    }}
-                    style={{
-                      padding: "12px 15px",
-                      fontSize: "0.95rem",
-                      borderRadius: "8px",
-                      border: "1px solid #ddd",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <option value="default">Default Sorting</option>
-                    <option value="newest">Newest First</option>
-                    <option value="priceLow">💰 Price: Low to High</option>
-                    <option value="priceHigh">💰 Price: High to Low</option>
-                    <option value="rating">⭐ Rating High to Low</option>
-                    <option value="nameAZ">A-Z Name</option>
-                    <option value="nameZA">Z-A Name</option>
-                  </Form.Select>
-                </div>
-              </Col>
-
-            </Row>
-
+            {/* Clear filters */}
+            {hasFilters && (
+              <button onClick={clearFilters} style={{
+                padding: "11px 18px", borderRadius: "13px",
+                border: "1.5px solid rgba(232,97,58,0.25)",
+                background: "rgba(232,97,58,0.06)",
+                color: T.accent, fontSize: "12px", fontWeight: "800",
+                cursor: "pointer", whiteSpace: "nowrap",
+              }}>
+                ✕ Clear
+              </button>
+            )}
           </div>
 
-          {/* Products Grid */}
-          {currentProducts.length === 0 ? (
-            <div style={{
-              textAlign: "center",
-              padding: "80px 20px",
-              background: "white",
-              borderRadius: "12px",
-              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)"
-            }}>
-              <div style={{ fontSize: "3rem", marginBottom: "15px" }}>🔍</div>
-              <h3 style={{
-                fontSize: "1.8rem",
-                fontWeight: "700",
-                color: "#1a1a1a",
-                marginBottom: "10px"
-              }}>
+          {/* ── Active filter chips ─────────────────────────── */}
+          {hasFilters && (
+            <div style={S.chipRow}>
+              {search && (
+                <div style={S.chip} onClick={() => setSearch("")}>
+                  🔍 "{search}" <span>×</span>
+                </div>
+              )}
+              {sort !== "default" && (
+                <div style={S.chip} onClick={() => setSort("default")}>
+                  ↕ {SORT_LABELS[sort]} <span>×</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Loading ─────────────────────────────────────── */}
+          {loading ? (
+            <div style={S.spinnerWrap}>
+              <div style={S.spinner} />
+              <div style={{ fontSize: "14px", fontWeight: "700", color: T.muted }}>
+                Loading products…
+              </div>
+            </div>
+          ) : currentProducts.length === 0 ? (
+            /* ── Empty state ──────────────────────────────── */
+            <div style={S.empty}>
+              <div style={{ fontSize: "52px", marginBottom: "16px" }}>🔍</div>
+              <div style={{ fontSize: "22px", fontWeight: "800", fontFamily: T.serif, color: T.dark, marginBottom: "8px" }}>
                 No Products Found
-              </h3>
-              <p style={{ color: "#666", marginBottom: "25px" }}>
+              </div>
+              <div style={{ fontSize: "14px", color: T.muted, marginBottom: "28px" }}>
                 Try adjusting your search or filters
-              </p>
-              <button
-                onClick={() => {
-                  setSearch("")
-                  setSort("default")
-                  setCurrentPage(1)
-                }}
-                style={{
-                  background: "#ff6b35",
-                  color: "white",
-                  border: "none",
-                  padding: "12px 30px",
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                  borderRadius: "8px",
-                  cursor: "pointer"
-                }}
-              >
+              </div>
+              <button onClick={clearFilters} style={{
+                padding: "13px 30px", borderRadius: "50px", border: "none",
+                background: "linear-gradient(135deg,#e8613a,#f0855e)",
+                color: "#fff", fontSize: "14px", fontWeight: "800", cursor: "pointer",
+                boxShadow: "0 8px 24px rgba(232,97,58,0.3)",
+              }}>
                 Clear Filters
               </button>
             </div>
           ) : (
-            <Row style={{ gap: "20px", marginBottom: "50px" }}>
+            <>
+              {/* ── Products grid ──────────────────────────── */}
+              <div style={S.grid}>
+                {currentProducts.map((product, i) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={i}
+                    vis={vis}
+                    onAddToCart={handleAddToCart}
+                  />
+                ))}
+              </div>
 
-              {currentProducts.map((product) => (
-                <Col lg={3} md={4} sm={6} key={product.id} style={{ marginBottom: "20px" }}>
-
-                  <Link to={`/product/${product.id}`} style={{ textDecoration: "none" }}>
-
-                    <Card style={{
-                      border: "none",
-                      borderRadius: "12px",
-                      overflow: "hidden",
-                      boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)",
-                      transition: "all 0.3s ease",
-                      height: "100%",
-                      cursor: "pointer",
-                      background: "white"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-8px)"
-                      e.currentTarget.style.boxShadow = "0 8px 25px rgba(0, 0, 0, 0.12)"
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)"
-                      e.currentTarget.style.boxShadow = "0 2px 12px rgba(0, 0, 0, 0.06)"
-                    }}
-                    >
-
-                      {/* Product Image Container */}
-                      <div style={{
-                        position: "relative",
-                        height: "250px",
-                        background: "#f8f9fa",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden"
-                      }}>
-
-                        {product.image && (
-                          <Card.Img
-                            variant="top"
-                            src={BASE_URL + product.image}
-                            style={{
-                              height: "100%",
-                              objectFit: "contain",
-                              padding: "20px"
-                            }}
-                          />
-                        )}
-
-                        {/* Badges */}
-                        <div style={{
-                          position: "absolute",
-                          top: "15px",
-                          left: "15px",
-                          display: "flex",
-                          gap: "8px",
-                          flexWrap: "wrap"
-                        }}>
-                          {product.isNew && (
-                            <Badge bg="success" style={{ fontSize: "0.75rem", fontWeight: "600" }}>
-                              NEW
-                            </Badge>
-                          )}
-                          {product.isTopDeal && (
-                            <Badge bg="danger" style={{ fontSize: "0.75rem", fontWeight: "600" }}>
-                              TOP DEAL
-                            </Badge>
-                          )}
-                          {product.isPopular && (
-                            <Badge bg="warning" text="dark" style={{ fontSize: "0.75rem", fontWeight: "600" }}>
-                              POPULAR
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Coupon Badge */}
-                        {product.Coupon && (
-                          <div style={{
-                            position: "absolute",
-                            bottom: "15px",
-                            right: "15px",
-                            background: "linear-gradient(135deg, #ff6b35, #e85a2a)",
-                            color: "white",
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            fontSize: "0.8rem",
-                            fontWeight: "600"
-                          }}>
-                            Save {product.Coupon.discountType === "percentage" ? product.Coupon.discountValue + "%" : "$" + product.Coupon.discountValue}
-                          </div>
-                        )}
-
-                      </div>
-
-                      {/* Product Info */}
-                      <Card.Body style={{ padding: "20px" }}>
-
-                        {/* Title */}
-                        <Card.Title style={{
-                          fontSize: "0.95rem",
-                          fontWeight: "600",
-                          color: "#1a1a1a",
-                          marginBottom: "12px",
-                          lineHeight: "1.3",
-                          minHeight: "40px"
-                        }}>
-                          {product.title}
-                        </Card.Title>
-
-                        {/* Rating */}
-                        {product.rating && (
-                          <div style={{ marginBottom: "12px" }}>
-                            <span style={{ color: "#ffc107", fontSize: "0.9rem" }}>
-                              ⭐ {product.rating.toFixed(1)}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Price */}
-                        <div style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                          marginBottom: "15px"
-                        }}>
-                          <span style={{
-                            fontSize: "1.3rem",
-                            fontWeight: "700",
-                            color: "#ff6b35"
-                          }}>
-                            ${product.price?.toFixed(2)}
-                          </span>
-                          {product.oldPrice && (
-                            <span style={{
-                              fontSize: "0.85rem",
-                              textDecoration: "line-through",
-                              color: "#999"
-                            }}>
-                              ${product.oldPrice.toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Add to Cart Button */}
-                        <button
-                          onClick={(e) => handleAddToCart(e, product)}
-                          style={{
-                            width: "100%",
-                            background: "linear-gradient(135deg, #007bff, #0056b3)",
-                            color: "white",
-                            border: "none",
-                            padding: "12px",
-                            fontSize: "0.95rem",
-                            fontWeight: "600",
-                            borderRadius: "8px",
-                            cursor: "pointer",
-                            transition: "all 0.3s ease"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.transform = "scale(1.02)"
-                            e.target.style.boxShadow = "0 4px 12px rgba(0, 123, 255, 0.3)"
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.transform = "scale(1)"
-                            e.target.style.boxShadow = "none"
-                          }}
-                        >
-                          🛒 Add to Cart
-                        </button>
-
-                      </Card.Body>
-
-                    </Card>
-
-                  </Link>
-
-                </Col>
-              ))}
-
-            </Row>
+              {/* ── Pagination ─────────────────────────────── */}
+              {totalPages > 1 && (
+                <div style={S.pagination}>
+                  <PageBtn
+                    label="← Prev"
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    disabled={currentPage === 1}
+                  />
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <PageBtn
+                      key={i}
+                      label={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      active={currentPage === i + 1}
+                    />
+                  ))}
+                  <PageBtn
+                    label="Next →"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage === totalPages}
+                  />
+                </div>
+              )}
+            </>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "10px",
-              marginTop: "50px",
-              marginBottom: "30px",
-              flexWrap: "wrap"
-            }}>
-
-              {currentPage > 1 && (
-                <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  style={{
-                    padding: "10px 16px",
-                    border: "1px solid #ddd",
-                    background: "#fff",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                    color: "#1a1a1a",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = "#f8f9fa"
-                    e.target.style.borderColor = "#ff6b35"
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = "#fff"
-                    e.target.style.borderColor = "#ddd"
-                  }}
-                >
-                  ← Previous
-                </button>
-              )}
-
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  style={{
-                    padding: "10px 14px",
-                    minWidth: "44px",
-                    border: "1px solid " + (currentPage === i + 1 ? "#ff6b35" : "#ddd"),
-                    background: currentPage === i + 1 ? "linear-gradient(135deg, #ff6b35, #e85a2a)" : "#fff",
-                    color: currentPage === i + 1 ? "#fff" : "#1a1a1a",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                    fontSize: "0.9rem",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={(e) => {
-                    if (currentPage !== i + 1) {
-                      e.target.style.borderColor = "#ff6b35"
-                      e.target.style.color = "#ff6b35"
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (currentPage !== i + 1) {
-                      e.target.style.borderColor = "#ddd"
-                      e.target.style.color = "#1a1a1a"
-                    }
-                  }}
-                >
-                  {i + 1}
-                </button>
-              ))}
-
-              {currentPage < totalPages && (
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  style={{
-                    padding: "10px 16px",
-                    border: "1px solid #ddd",
-                    background: "#fff",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                    color: "#1a1a1a",
-                    transition: "all 0.2s ease"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = "#f8f9fa"
-                    e.target.style.borderColor = "#ff6b35"
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = "#fff"
-                    e.target.style.borderColor = "#ddd"
-                  }}
-                >
-                  Next →
-                </button>
-              )}
-
-            </div>
-          )}
-
-        </Container>
-
-      </section>
+        </div>
+      </div>
 
       <InstagramSection />
-
     </>
   )
-
 }
 
 export default Shop
