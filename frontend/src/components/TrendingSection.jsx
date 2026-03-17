@@ -1,173 +1,249 @@
-import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Nav } from "react-bootstrap";
-import API from "../services/api";
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import API from "../services/api"
 
-const BASE_URL = "http://localhost:5000/uploads/";
+const BASE_URL = "http://localhost:5000/uploads/"
 
+const T = {
+  bg:     "linear-gradient(160deg, #fef9f5 0%, #fff5f0 50%, #fdf0ff 100%)",
+  white:  "#ffffff",
+  accent: "#e8613a",
+  dark:   "#1c1410",
+  muted:  "rgba(28,20,16,0.45)",
+  border: "rgba(232,97,58,0.1)",
+  serif:  "'Lora', serif",
+  sans:   "'Nunito Sans', sans-serif",
+  radius: "18px",
+}
+
+// ── Star renderer ─────────────────────────────────────────────
+const Stars = ({ rating }) => {
+  const r = Math.min(5, Math.max(0, parseFloat(rating) || 4))
+  const full = Math.floor(r)
+  const half = r - full >= 0.5
+  return (
+    <span style={{ color: "#f5a623", fontSize: "13px", letterSpacing: "1px" }}>
+      {"★".repeat(full)}
+      {half ? "½" : ""}
+      {"☆".repeat(5 - full - (half ? 1 : 0))}
+      <span style={{ color: T.muted, fontSize: "11px", marginLeft: "5px", fontWeight: "600" }}>
+        ({r.toFixed(1)})
+      </span>
+    </span>
+  )
+}
+
+// ── Product Card ──────────────────────────────────────────────
+const TrendCard = ({ product, index, vis }) => {
+  const [hov, setHov] = useState(false)
+  return (
+    <Link
+      to={`/product/${product.id}`}
+      style={{
+        background: T.white,
+        borderRadius: T.radius,
+        border: `1px solid ${hov ? "rgba(232,97,58,0.22)" : T.border}`,
+        overflow: "hidden",
+        textDecoration: "none",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: hov
+          ? "0 20px 56px rgba(232,97,58,0.12)"
+          : "0 3px 16px rgba(0,0,0,0.05)",
+        transform: hov ? "translateY(-6px)" : "translateY(0)",
+        transition: "all 0.35s cubic-bezier(0.23,1,0.32,1)",
+        opacity: vis ? 1 : 0,
+        transitionDelay: `${index * 0.07}s`,
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      {/* Image */}
+      <div style={{
+        height: "240px", overflow: "hidden",
+        background: "linear-gradient(135deg,#fef5f0,#fff8f5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "24px",
+      }}>
+        {product.image
+          ? <img
+              src={`${BASE_URL}${product.image}`}
+              alt={product.title}
+              style={{
+                maxHeight: "100%", maxWidth: "100%", objectFit: "contain",
+                transform: hov ? "scale(1.07)" : "scale(1)",
+                transition: "transform 0.45s cubic-bezier(0.23,1,0.32,1)",
+              }}
+            />
+          : <div style={{ fontSize: "52px", opacity: 0.25 }}>📦</div>
+        }
+      </div>
+
+      {/* Body */}
+      <div style={{ padding: "18px 20px 22px", flex: 1, display: "flex", flexDirection: "column", gap: "10px" }}>
+        <Stars rating={product.rating} />
+        <div style={{
+          fontSize: "14px", fontWeight: "700", color: T.dark,
+          lineHeight: 1.45, fontFamily: T.sans,
+          display: "-webkit-box", WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>
+          {product.title}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "auto" }}>
+          <span style={{
+            fontSize: "18px", fontWeight: "800",
+            fontFamily: T.serif, color: T.accent,
+          }}>
+            ${product.price}
+          </span>
+          <span style={{
+            fontSize: "11px", fontWeight: "700",
+            color: hov ? T.accent : T.muted,
+            transition: "color 0.2s ease",
+          }}>
+            View →
+          </span>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+// ── Tab button ────────────────────────────────────────────────
+const TabBtn = ({ label, active, onClick }) => {
+  const [hov, setHov] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "8px 18px",
+        borderRadius: "50px",
+        border: `1.5px solid ${active ? T.accent : hov ? "rgba(232,97,58,0.3)" : "rgba(28,20,16,0.1)"}`,
+        background: active ? "linear-gradient(135deg,#e8613a,#f0855e)" : hov ? "rgba(232,97,58,0.05)" : "transparent",
+        color: active ? "#fff" : hov ? T.accent : T.muted,
+        fontSize: "13px", fontWeight: "700",
+        cursor: "pointer", fontFamily: T.sans,
+        boxShadow: active ? "0 6px 20px rgba(232,97,58,0.3)" : "none",
+        transition: "all 0.25s ease",
+        whiteSpace: "nowrap",
+      }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      {label}
+    </button>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────
 const TrendingSection = () => {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [products,        setProducts]        = useState([])
+  const [categories,      setCategories]      = useState([])
+  const [activeCategory,  setActiveCategory]  = useState("All")
+  const [vis,             setVis]             = useState(false)
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const res = await API.get("/products");
-      setProducts(res.data);
-    } catch (err) {
-      console.error(err);
+    const fetchAll = async () => {
+      try {
+        const [prodRes, catRes] = await Promise.allSettled([
+          API.get("/products"),
+          API.get("/categories/active"),
+        ])
+        if (prodRes.status === "fulfilled") {
+          setProducts(Array.isArray(prodRes.value.data) ? prodRes.value.data : [])
+        }
+        if (catRes.status === "fulfilled") {
+          setCategories(Array.isArray(catRes.value.data) ? catRes.value.data : [])
+        }
+      } catch (err) {
+        console.error(err)
+      }
     }
-  };
+    fetchAll()
+    setTimeout(() => setVis(true), 80)
+  }, [])
 
-  const fetchCategories = async () => {
-    try {
-      const res = await API.get("/categories/active");
-      setCategories(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const tabCategories = ["All", ...categories.map(c => c.name)]
 
-  const tabCategories = ["All", ...categories.map(c => c.name)];
-
-  const filteredProducts =
-    activeCategory === "All"
-      ? products
-      : products.filter(
-          p =>
-            p.Category &&
-            p.Category.name === activeCategory
-        );
+  const filtered = activeCategory === "All"
+    ? products
+    : products.filter(p => p.Category?.name === activeCategory)
 
   return (
-    <section style={{ padding: "70px 0", background: "#fff" }}>
-      <Container>
+    <section style={{ padding: "80px 0", background: T.white }}>
+      <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "0 24px" }}>
 
-        <Row className="align-items-center mb-4">
-          <Col md={6}>
-            <h2
-              style={{
-                fontFamily: "Playfair Display, serif",
-                fontWeight: 700,
-                fontSize: "30px"
-              }}
-            >
+        {/* ── Header row ──────────────────────────────── */}
+        <div style={{
+          display: "flex", alignItems: "flex-end",
+          justifyContent: "space-between",
+          marginBottom: "32px", flexWrap: "wrap", gap: "20px",
+        }}>
+          {/* Title */}
+          <div>
+            <div style={{
+              fontSize: "10px", fontWeight: "800", letterSpacing: "3px",
+              textTransform: "uppercase", color: T.accent, marginBottom: "8px",
+            }}>
+              🔥 What's Hot
+            </div>
+            <h2 style={{
+              fontSize: "clamp(22px,3vw,34px)", fontWeight: "800",
+              fontFamily: T.serif, color: T.dark,
+              letterSpacing: "-0.5px", margin: 0,
+            }}>
               Trending Fashion Items
             </h2>
-          </Col>
+          </div>
 
-          <Col md={6} className="text-md-end mt-3 mt-md-0">
-            <Nav className="justify-content-md-end">
-              {tabCategories.map(cat => (
-                <Nav.Item key={cat}>
-                  <Nav.Link
-                    onClick={() => setActiveCategory(cat)}
-                    className={`trend-tab ${
-                      activeCategory === cat ? "active-trend" : ""
-                    }`}
-                  >
-                    {cat}
-                  </Nav.Link>
-                </Nav.Item>
-              ))}
-            </Nav>
-          </Col>
-        </Row>
+          {/* Category tabs */}
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {tabCategories.map(cat => (
+              <TabBtn
+                key={cat}
+                label={cat}
+                active={activeCategory === cat}
+                onClick={() => {
+                  setActiveCategory(cat)
+                  setVis(false)
+                  setTimeout(() => setVis(true), 60)
+                }}
+              />
+            ))}
+          </div>
+        </div>
 
-        <hr style={{ marginTop: "-5px" }} />
+        {/* ── Divider ──────────────────────────────────── */}
+        <div style={{
+          height: "1px",
+          background: "linear-gradient(90deg, transparent, rgba(232,97,58,0.2), transparent)",
+          marginBottom: "36px",
+        }} />
 
-        <Row className="mt-4 g-4">
-          {filteredProducts.slice(0, 6).map(product => (
-            <Col md={4} key={product.id}>
-              <Card className="border-0 trend-card">
+        {/* ── Product grid ─────────────────────────────── */}
+        {filtered.length === 0 ? (
+          <div style={{
+            textAlign: "center", padding: "80px 24px",
+            color: T.muted, fontSize: "14px", fontWeight: "600",
+          }}>
+            No products found in this category.
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "24px",
+          }}>
+            {filtered.slice(0, 6).map((product, i) => (
+              <TrendCard key={product.id} product={product} index={i} vis={vis} />
+            ))}
+          </div>
+        )}
 
-                {product.image && (
-                  <Card.Img
-                    variant="top"
-                    src={`${BASE_URL}${product.image}`}
-                    style={{
-                      background: "#f4f4f4",
-                      padding: "40px",
-                      height: "280px",
-                      objectFit: "contain"
-                    }}
-                  />
-                )}
-
-                <Card.Body>
-
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <div style={{ color: "#f4b400", fontSize: "14px" }}>
-                      {"★".repeat(Math.round(product.rating || 4))}
-                      <span style={{ color: "#888", marginLeft: "6px" }}>
-                        ({Math.round(product.rating || 4)})
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        color: "#ff3d00",
-                        fontWeight: 600
-                      }}
-                    >
-                      ${product.price}
-                    </div>
-                  </div>
-
-                  <Card.Title style={{ fontSize: "15px", fontWeight: 500 }}>
-                    {product.title}
-                  </Card.Title>
-
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-
-      </Container>
-
-      <style>{`
-        .trend-tab {
-          color: #666 !important;
-          font-weight: 500;
-          margin-left: 20px;
-          cursor: pointer;
-          position: relative;
-        }
-
-        .trend-tab:hover {
-          color: #ff3d00 !important;
-        }
-
-        .active-trend {
-          color: #ff3d00 !important;
-        }
-
-        .active-trend::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          bottom: -6px;
-          width: 100%;
-          height: 2px;
-          background: #ff3d00;
-        }
-
-        .trend-card {
-          transition: all 0.3s ease;
-        }
-
-        .trend-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-        }
-      `}</style>
+      </div>
     </section>
-  );
-};
+  )
+}
 
-export default TrendingSection;
+export default TrendingSection

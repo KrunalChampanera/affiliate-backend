@@ -10,6 +10,7 @@ const OrderItem = require("./OrderItem")
 const Banner = require("./Banner")
 const Blog = require("./Blog")
 const LoginLog = require("./loginLog")
+const Author = require("./Author")
 
 /* ======================
    USER RELATIONS
@@ -141,5 +142,6 @@ module.exports = {
   OrderItem,
   Banner,
   Blog,
+  Author,
   LoginLog
 }

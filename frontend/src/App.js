@@ -20,7 +20,10 @@ import Checkout from "./pages/Checkout.jsx"
 import Coupons from "./components/Coupons.jsx"
 import Contact from "./pages/Contact.jsx"
 import BlogPage from "./pages/BlogPage.jsx"
-
+import BlogDetail from "./pages/BlogDetail.jsx"
+import AuthorPage from "./pages/AuthorPage.jsx"
+import CategoryPage from "./components/Categorypage.jsx"
+import TagsPage from "./components/TagsPage.jsx"
 
 function App() {
   return (
@@ -31,30 +34,45 @@ function App() {
           <Header />
 
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<AboutUs/>} />
-            <Route path="/Faq" element={<Faq/>} />
-            <Route path="/account" element={<MyAccount/>} />
-            <Route path="/terms" element={<Terms/>} />
-            <Route path="/profile" element={<Profile/>} />
+            {/* ── General ───────────────────────────────── */}
+            <Route path="/"         element={<Home />} />
+            <Route path="/about"    element={<AboutUs />} />
+            <Route path="/Faq"      element={<Faq />} />
+            <Route path="/account"  element={<MyAccount />} />
+            <Route path="/terms"    element={<Terms />} />
+            <Route path="/profile"  element={<Profile />} />
+            <Route path="/contact"  element={<Contact />} />
 
-            <Route path="/shop" element={<Shop/>} />
-            <Route path="/product" element={<Details />} />
-            <Route path="/reviews" element={<Reviews/>}  />
-            <Route path="/review/:id" element={<ReviewDetails/>}/>
-            <Route path="/cart" element={<Cart/>} />
-            <Route path="/product/:id" element={<ProductDetails/>} />
-            <Route path="/wishlist" element={<Wishlist/>} />
-            <Route path="/checkout" element={<Checkout/>} />
-            <Route path="/coupon" element={<Coupons/>} />
-            <Route path="/coupons" element={<Coupons/>} />
+            {/* ── Shop ──────────────────────────────────── */}
+            <Route path="/shop"         element={<Shop />} />
+            <Route path="/product"      element={<Details />} />
+            <Route path="/product/:id"  element={<ProductDetails />} />
+            <Route path="/reviews"      element={<Reviews />} />
+            <Route path="/review/:id"   element={<ReviewDetails />} />
+            <Route path="/cart"         element={<Cart />} />
+            <Route path="/wishlist"     element={<Wishlist />} />
+            <Route path="/checkout"     element={<Checkout />} />
+            <Route path="/coupon"       element={<Coupons />} />
+            <Route path="/coupons"      element={<Coupons />} />
 
-            <Route path="/contact" element={<Contact/>} />
+            {/* ── Categories ────────────────────────────── */}
+            <Route path="/categories"        element={<CategoryPage />} />
+            <Route path="/categories/:slug"  element={<CategoryPage />} />
 
-            <Route path="/blog" element={<BlogPage/>} />
+            {/* ── Blog ──────────────────────────────────── */}
+            <Route path="/blog"        element={<BlogPage />} />
+            <Route path="/blog/:id"    element={<BlogDetail />} />
+
+            {/* ── Authors ───────────────────────────────── */}
+            <Route path="/author"      element={<AuthorPage />} />
+
+            {/* ── Tags ──────────────────────────────────── */}
+            <Route path="/tags"        element={<TagsPage />} />
+            <Route path="/tags/:tag"   element={<TagsPage />} />
+
           </Routes>
 
-          <Footer/>
+          <Footer />
 
         </CartProvider>
       </AuthProvider>

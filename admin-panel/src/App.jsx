@@ -14,6 +14,7 @@ import Blogs from "./pages/Blogs";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import AdminUsers from "./pages/AdminUsers";
+import Authors from "./pages/Authors";
 
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="orders" element={<Orders />} />
           <Route path="coupons" element={<Coupons />} />
+          <Route path="authors" element={<Authors/>} />
           <Route path="/blog" element={<Blogs/>} />
         </Route>
       </Routes>

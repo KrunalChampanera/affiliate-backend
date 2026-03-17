@@ -25,7 +25,7 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "http://localhost:3001",  // frontend
+    "http://localhost:3000",  // frontend
     "http://localhost:5173",  // admin
   ],
   credentials: false,  // false because you use Bearer tokens not cookies
@@ -50,6 +50,7 @@ app.use("/api/orders",     require("./routes/orderRoutes"));
 app.use("/api/auth",       require("./routes/authRoutes"));
 app.use("/api/banners",    require("./routes/bannerRoutes"));
 app.use("/api/blogs",      require("./routes/blogRoutes"));
+app.use("/api/authors",    require("./routes/authorRoutes"))
 
 const errorHandler = require("./middlewares/errorMiddleware");
 app.use(errorHandler);

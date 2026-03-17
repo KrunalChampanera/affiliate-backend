@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: "/categories", icon: FaList,           label: "Categories",  color: "#f5a623" },
   { to: "/adminuser",  icon: FaUsers,          label: "User List",   color: "#38bdf8" },
   { to: "/blog",       icon: FaList,           label: "Blog",        color: "#fb7185" },
+  { to: "/authors",    icon: FaUsers,          label: "Authors",     color: "#f472b6" },
   { to: "/banners",    icon: FaList,           label: "Banners",     color: "#34d399" },
   { to: "/products",   icon: FaBox,            label: "Products",    color: "#fbbf24" },
   { to: "/orders",     icon: FaClipboardList,  label: "Orders",      color: "#e8613a" },
