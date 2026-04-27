@@ -1,6 +1,5 @@
 require("dotenv").config();
 
-// ── Catch ALL crashes and write to crash.log ──────────────────
 process.on("uncaughtException", (err) => {
   require("fs").appendFileSync("crash.log",
     "\n[" + new Date().toISOString() + "] CRASH: " + err.message + "\n" + err.stack + "\n"
@@ -15,21 +14,26 @@ process.on("unhandledRejection", (reason) => {
   console.error("❌ REJECTION:", reason)
 })
 
-const express  = require("express");
-const cors     = require("cors");
+const express = require("express");
+const cors    = require("cors");
 const { sequelize, connectDB } = require("./config/db");
 
 require("./models");
 
 const app = express();
 
-app.use(cors({
-  origin: [
-    "http://localhost:3000",  // frontend
-    "http://localhost:5173",  // admin
-  ],
-  credentials: false,  // false because you use Bearer tokens not cookies
-}));
+// ── CORS ──────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use(cors({ origin: "*", credentials: false }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -50,7 +54,7 @@ app.use("/api/orders",     require("./routes/orderRoutes"));
 app.use("/api/auth",       require("./routes/authRoutes"));
 app.use("/api/banners",    require("./routes/bannerRoutes"));
 app.use("/api/blogs",      require("./routes/blogRoutes"));
-app.use("/api/authors",    require("./routes/authorRoutes"))
+app.use("/api/authors",    require("./routes/authorRoutes"));
 
 const errorHandler = require("./middlewares/errorMiddleware");
 app.use(errorHandler);
@@ -60,22 +64,20 @@ const PORT = process.env.PORT || 5000;
 // ── Keep MySQL alive every 30 seconds ─────────────────────────
 setInterval(async () => {
   try {
-    await sequelize.authenticate()
+    await sequelize.authenticate();
   } catch (err) {
-    console.error("❌ DB ping failed:", err.message)
+    console.error("❌ DB ping failed:", err.message);
   }
-}, 30000)
+}, 30000);
 
 const startServer = async () => {
   try {
     await connectDB();
     await sequelize.sync();
     console.log("✅ Database synced successfully");
-
     app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
-
   } catch (error) {
     console.error("❌ Server startup failed:", error.message);
     if (error.parent) {
