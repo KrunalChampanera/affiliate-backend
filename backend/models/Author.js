@@ -1,31 +1,34 @@
-const { DataTypes } = require("sequelize")
-const { sequelize } = require("../config/db")
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/db");
 
 const Author = sequelize.define("Author", {
   name: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: false
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: true
   },
   bio: {
     type: DataTypes.TEXT,
-    allowNull: true,
+    allowNull: true
   },
   image: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: true
   },
   role: {
     type: DataTypes.STRING,
-    defaultValue: "Author",
+    defaultValue: "Author"
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true,
-  },
-})
+    defaultValue: true
+  }
+}, {
+  tableName: "authors",
+  freezeTableName: true
+});
 
-module.exports = Author
+module.exports = Author;

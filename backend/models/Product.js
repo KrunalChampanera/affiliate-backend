@@ -6,42 +6,38 @@ const Product = sequelize.define("Product", {
     type: DataTypes.STRING,
     allowNull: false
   },
-
   price: {
     type: DataTypes.FLOAT,
     allowNull: false
   },
-
   description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-
   rating: {
     type: DataTypes.FLOAT,
     defaultValue: 0
   },
-
   image: {
     type: DataTypes.STRING,
     allowNull: true
   },
-
   isTopDeal: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-
   isPopular: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-
   isNew: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-
+  showInShop: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   couponId: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -50,12 +46,13 @@ const Product = sequelize.define("Product", {
       key: "id"
     }
   },
-
   CategoryId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   }
-
+}, {
+  tableName: "products",
+  freezeTableName: true
 });
 
 module.exports = Product;

@@ -1,5 +1,5 @@
-const { DataTypes, Model } = require("sequelize")
-const { sequelize } = require("../config/db")
+const { DataTypes, Model } = require("sequelize");
+const { sequelize } = require("../config/db");
 
 class LoginLog extends Model {}
 
@@ -11,26 +11,27 @@ LoginLog.init({
   },
   userId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: {
-      model: "Users",
+      model: "users",
       key: "id"
     }
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   loginTime: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
-    allowNull: false
+    allowNull: true
   }
 }, {
   sequelize,
   modelName: "LoginLog",
-  tableName: "LoginLogs",
-  timestamps: false
-})
+  tableName: "loginlogs",
+  freezeTableName: true,
+  timestamps: true
+});
 
-module.exports = LoginLog
+module.exports = LoginLog;

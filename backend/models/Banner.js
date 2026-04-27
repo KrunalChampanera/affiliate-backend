@@ -12,6 +12,8 @@ const Banner = sequelize.define("Banner", {
   backgroundColor: DataTypes.STRING,
   position: DataTypes.STRING
 }, {
+  tableName: "banners",
+  freezeTableName: true,
   timestamps: true
 });
 

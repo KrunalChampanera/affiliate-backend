@@ -4,9 +4,12 @@ const { sequelize } = require("../config/db");
 const Review = sequelize.define("Review", {
   rating: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: false
   },
-  comment: DataTypes.TEXT,
+  comment: DataTypes.TEXT
+}, {
+  tableName: "reviews",
+  freezeTableName: true
 });
 
 module.exports = Review;
