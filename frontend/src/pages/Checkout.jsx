@@ -370,7 +370,7 @@ const S = {
   }),
 }
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const Field = ({ label, name, value, onChange, icon, required: req, type = "text", half }) => {
   const [focus, setFocus] = useState(false)

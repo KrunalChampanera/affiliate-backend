@@ -5,7 +5,7 @@ import API from "../services/api"
 import InstagramSection from "./InstagramSection"
 import PageHeader from "./PageHeader"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const S = {
   page: {

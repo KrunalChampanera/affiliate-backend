@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import API from "../services/api";
 
-const BASE_URL = "http://localhost:5000/uploads/";
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/";
 
 const PopularBlogs = () => {
 

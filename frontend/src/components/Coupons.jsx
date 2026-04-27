@@ -3,7 +3,7 @@ import { Container, Row, Col, Button, Card, Alert, Spinner, Badge } from "react-
 import { useNavigate } from "react-router-dom"
 import API from "../services/api"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const Coupons = () => {
   const navigate = useNavigate()

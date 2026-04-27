@@ -4,7 +4,7 @@ import API from "../services/api"
 import { Link } from "react-router-dom"
 import InstagramSection from "./InstagramSection"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const S = {
   page: {

@@ -1,7 +1,7 @@
 // import axios from "axios";
 
 // const API = axios.create({
-//   baseURL: "http://localhost:5000/api"
+//   baseURL: "http://https://affiliate-backend-vm5i.onrender.com/api"
 // });
 
 // API.interceptors.request.use((config) => {
@@ -19,7 +19,7 @@
 import axios from "axios"
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "http://https://affiliate-backend-vm5i.onrender.com/api",
 })
 
 // ── REQUEST interceptor ───────────────────────────────────────

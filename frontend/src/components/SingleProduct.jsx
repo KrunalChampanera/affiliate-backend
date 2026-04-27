@@ -5,7 +5,7 @@ import ProductTabsSection from "./ProductTabsSection"
 import InstagramSection from "./InstagramSection"
 import API from "../services/api"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const Details = () => {
   const { id } = useParams()

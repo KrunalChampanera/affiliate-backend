@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 import InstagramSection from "./InstagramSection"
 import PageHeader from "./PageHeader"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 // ─── Design tokens ────────────────────────────────────────────
 const T = {

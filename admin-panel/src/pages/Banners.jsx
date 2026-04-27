@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import API from "../services/api"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const POSITIONS = [
   { value: "hero",           label: "🏠 Hero",                 color: "#a78bfa" },

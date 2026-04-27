@@ -4,7 +4,7 @@ import API from "../services/api"
 import PageHeader from "../components/PageHeader"
 import InstagramSection from "../components/InstagramSection"
 
-const BASE_URL = "http://localhost:5000/uploads/"
+const BASE_URL = "http://https://affiliate-backend-vm5i.onrender.com/uploads/"
 
 const T = {
   bg:     "linear-gradient(160deg, #fef9f5 0%, #fff5f0 50%, #fdf0ff 100%)",
